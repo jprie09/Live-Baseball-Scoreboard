@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baseball Scoreboard Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #2c3e50;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #ecf0f1;
+    }
+
+    #scoreboard {
+      display: flex;
+      justify-content: space-around;
+      background: #34495e;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      width: 80%;
+      max-width: 800px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .counter-container {
+      text-align: center;
+      flex: 1;
+    }
+
+    h3 {
+      margin: 0;
+      font-weight: 400;
+      color: #ecf0f1;
+    }
+
+    .counter {
+      font-size: 3em;
+      font-weight: 700;
+      color: #e74c3c;
+    }
+
+    .inning {
+      font-size: 3em;
+      font-weight: 700;
+      color: #f39c12;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #c0392b;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    .button-decrement {
+      background-color: #3498db;
+    }
+
+    .button-decrement:hover {
+      background-color: #2980b9;
+    }
+
+    body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    }
+
+    html {
+    touch-action: manipulation;
+    }
+
+@viewport {
+    zoom: 1.0 !important;
+    min-zoom: 1.0 !important;
+    max-zoom: 1.0 !important;
+    user-zoom: fixed !important;
+}
+
+
+  </style>
+</head>
+<body>
+
+<div id="scoreboard">
+    <div class="guest-score">
+        <div class="label">Guest</div>
+        <div id="guestScore" class="counter">0</div>
+        <div class="button-container">
+        <button class="button-decrement" onclick="increment('guestScore', -1)">-</button>
+        <button onclick="increment('guestScore', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="counter-container">
+        <div class="label">Innings</div>
+        <div id="innings" class="inning">1</div>
+        <div class="button-container">
+            <button class="button-decrement" onclick="increment('innings', -1)">-</button>
+            <button onclick="increment('innings', 1)">+</button>
+        </div>
+        </div>
+
+    <div class="home-container">
+        <div class="label">Home</div>
+        <div id="homeScore" class="counter">0</div>
+        <div class="button-container">
+        <button class="button-decrement" onclick="increment('homeScore', -1)">-</button>
+        <button onclick="increment('homeScore', 1)">+</button>
+        </div>
+    </div>
+    </div>
+
+  <div id="scoreboard">
+    <div class="counter-container">
+      <div class="label">Strikes</div>
+      <div id="strikes" class="counter">0</div>
+      <div class="button-container">
+        <button class="button-decrement" onclick="increment('strikes', -1)">-</button>
+        <button onclick="increment('strikes', 1)">+</button>
+      </div>
+    </div>
+    <div class="counter-container">
+      <div class="label">Balls</div>
+      <div id="balls" class="counter">0</div>
+      <div class="button-container">
+        <button class="button-decrement" onclick="increment('balls', -1)">-</button>
+        <button onclick="increment('balls', 1)">+</button>
+      </div>
+    </div>
+    <div class="counter-container">
+      <div class="label">Outs</div>
+      <div id="outs" class="counter">0</div>
+      <div class="button-container">
+        <button class="button-decrement" onclick="increment('outs', -1)">-</button>
+        <button onclick="increment('outs', 1)">+</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+
+
+</div>
+
+  <script type="module">
+    //Imports for firebase config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-firestore.js";
+
+    //FB config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAoW1PfIg8L4XwKOqWic-fRflPtHXh_IZg",
+        authDomain: "trackit-4cb8a.firebaseapp.com",
+        projectId: "trackit-4cb8a",
+        storageBucket: "trackit-4cb8a.appspot.com",
+        messagingSenderId: "477781281063",
+        appId: "1:477781281063:web:701176529efcbf95ee0102",
+        measurementId: "G-MCKX221RP4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Counters for func
+    async function initializeCounters() {
+      const counters = ['strikes', 'balls', 'outs', 'innings', 'guestScore', 'homeScore'];
+      for (const counter of counters) {
+        const docRef = doc(db, counter, 'counter');
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          await setDoc(docRef, { count: counter === 'innings' ? 1 : 0 });
+        }
+      }
+    }
+
+    // Counter func
+    async function increment(counter, value) {
+      const docRef = doc(db, counter, 'counter');
+      const docSnap = await getDoc(docRef);
+      let count = docSnap.data().count;
+      count += value;
+      if (count < 0) count = 0;
+      if (counter === 'strikes' && count >= 3) {
+        count = 0;
+        await increment('outs', 1);
+      }
+      if (counter === 'balls' && count >= 4) {
+        count = 0;
+      }
+      if (counter === 'outs' && count >= 3) {
+        count = 0;
+        await increment('innings', 1);
+      }
+      await setDoc(docRef, { count: count });
+    }
+
+    window.increment = increment;
+    initializeCounters();
+
+    // Changes for any score updates
+    const counters = ['strikes', 'balls', 'outs', 'innings', 'guestScore', 'homeScore'];
+    for (const counter of counters) {
+      const docRef = doc(db, counter, 'counter');
+      onSnapshot(docRef, (docSnap) => {
+        document.getElementById(counter).innerText = docSnap.data().count;
+      });
+    }
+
+    // Web browser features disable
+document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+document.addEventListener('dblclick', function (e) {
+    e.preventDefault();
+});
+  </script>
+
+</body>
+</html>
